@@ -10,12 +10,12 @@
  * 
  * Eingabe:
  *  str_1, str_2    : die zu vergleichenden Zeichenketten
- *  W_1, W_2, W_t   : Gewichte für Berechnung der Ähnlichkeit
+ *  W_1, W_2, W_t   : Gewichte fï¿½r Berechnung der ï¿½hnlichkeit
  *  r               : Radiuskoeffizient. Es werden gemeinsame Zeichen im
  *                    Radius r * max(length(str_1),length(str_2) betrachtet
  *  transpos_radius : gibt an, wie weit ein gemeinsame Zeichen voneinander
- *                    entfernt sein dürfen, ohne als Transposition zu zählen                
- * Ausgabe:         Ähnlichkeitsmaß im Intervall [0, W_1 + W_2 + W_3]
+ *                    entfernt sein dï¿½rfen, ohne als Transposition zu zï¿½hlen                
+ * Ausgabe:         ï¿½hnlichkeitsmaï¿½ im Intervall [0, W_1 + W_2 + W_3]
  */
 
 int getCommonCharacters(char * common, const char * str_1, 
@@ -40,27 +40,39 @@ double jarowinkler_core(const char * str_1, const char * str_2,
 						  
 
 // version for .Call, faster because nothing is duplicated
-SEXP jarowinklerCALL(SEXP str1EXP, SEXP str2EXP, SEXP W_1EXP, SEXP W_2EXP, 
-  SEXP W_tEXP, SEXP rEXP)
+SEXP jarowinklerCALL(SEXP str1EXP, SEXP str2EXP, SEXP W_1EXP, SEXP W_2EXP, SEXP W_tEXP, SEXP rEXP, SEXP gidEXP, SEXP uidEXP)
 {
   const char *str_1, *str_2;
   double *W_1, *W_2, *W_t, *r, *ans;
-  int length_1, length_2, maxlen;
+  int length_1, length_2, maxlen, gid, uid;
+  
   SEXP ret;
+  
   W_1 = NUMERIC_POINTER(W_1EXP);
   W_2 = NUMERIC_POINTER(W_2EXP);
   W_t = NUMERIC_POINTER(W_tEXP);
+  uid = NUMERIC_POINTER(uidEXP);
+  gid = NUMERIC_POINTER(gidEXP);
   r = NUMERIC_POINTER(rEXP);
   length_1 = LENGTH(str1EXP);
   length_2 = LENGTH(str2EXP);
+  
   maxlen = length_1 > length_2 ? length_1 : length_2; 
+  
   PROTECT(ret = NEW_NUMERIC(maxlen));
   ans = NUMERIC_POINTER(ret);
-  for (int str_ind=0; str_ind < maxlen; str_ind++)
-  {
-    str_1=CHAR(STRING_ELT(str1EXP, str_ind % length_1));
-    str_2=CHAR(STRING_ELT(str2EXP, str_ind % length_2));
-    ans[str_ind]=jarowinkler_core(str_1, str_2, *W_1, *W_2, *W_t, *r);
+  for (int str_ind=0; str_ind < maxlen; str_ind++){
+    str_1 = CHAR(STRING_ELT(str1EXP, str_ind % length_1));
+
+    for (v = 0; v < 10; v++){
+        str_2 = CHAR(STRING_ELT(str2EXP, str_ind % length_2));
+        jarowinkler_core(str_1, str_2, *W_1, *W_2, *W_t, *r);
+    }
+
+
+    // Allocate largest winkler score
+    ans[str_ind] = jarowinkler_core(str_1, str_2, *W_1, *W_2, *W_t, *r);
+
   }
   UNPROTECT(1);
   return(ret);
@@ -89,13 +101,13 @@ void jarowinkler(const char ** strvec_1, const char ** strvec_2,
 //     double jaro_score=jaro(str_1, str_2, *W_1, *W_2, *W_t, *r, *use_transpos_radius);
 //   
 //     // Rprintf("Berechne daraus Jaro-Winkler\n"); // Debug-Ausgabe
-//     /* wenn jaro() 1 oder 0 zurückgibt, ist das der endgültige Wert */
+//     /* wenn jaro() 1 oder 0 zurï¿½ckgibt, ist das der endgï¿½ltige Wert */
 //     if (jaro_score==1.0 || jaro_score==0.0)
 //       ans[str_ind]=jaro_score;
 //       
 //     /* else */
-//     // Rprintf("Ermittle Anzahl der Zeichen, für die die Stringanfänge übereinstimmen\n"); // Debug-Ausgabe
-//     /* Ermittle Anzahl der Zeichen, für die die Stringanfänge übereinstimmen */
+//     // Rprintf("Ermittle Anzahl der Zeichen, fï¿½r die die Stringanfï¿½nge ï¿½bereinstimmen\n"); // Debug-Ausgabe
+//     /* Ermittle Anzahl der Zeichen, fï¿½r die die Stringanfï¿½nge ï¿½bereinstimmen */
 //     int min_str_len=str_len_1<str_len_2 ? str_len_1 : str_len_2;
 //     int max_i=0;  
 //     while (str_1[max_i]==str_2[max_i] && max_i<4 && max_i<min_str_len)
@@ -119,13 +131,13 @@ double jarowinkler_core(const char * str_1, const char * str_2,
   double jaro_score=jaro(str_1, str_2, W_1, W_2, W_t, r, 0);
 
   // Rprintf("Berechne daraus Jaro-Winkler\n"); // Debug-Ausgabe
-  /* wenn jaro() 1 oder 0 zurückgibt, ist das der endgültige Wert */
+  /* wenn jaro() 1 oder 0 zurï¿½ckgibt, ist das der endgï¿½ltige Wert */
   if (jaro_score==1.0 || jaro_score==0.0)
     return(jaro_score);
     
   /* else */
-  // Rprintf("Ermittle Anzahl der Zeichen, für die die Stringanfänge übereinstimmen\n"); // Debug-Ausgabe
-  /* Ermittle Anzahl der Zeichen, für die die Stringanfänge übereinstimmen */
+  // Rprintf("Ermittle Anzahl der Zeichen, fï¿½r die die Stringanfï¿½nge ï¿½bereinstimmen\n"); // Debug-Ausgabe
+  /* Ermittle Anzahl der Zeichen, fï¿½r die die Stringanfï¿½nge ï¿½bereinstimmen */
   int min_str_len=str_len_1<str_len_2 ? str_len_1 : str_len_2;
   int max_i=0;  
   while (str_1[max_i]==str_2[max_i] && max_i<4 && max_i<min_str_len)
@@ -144,18 +156,18 @@ double jarowinkler_core(const char * str_1, const char * str_2,
   int str_len_1=strlen(str_1);
   int str_len_2=strlen(str_2);
 
-  /* wenn eine Zeichenkette leer ist, gib 0 zurück */
+  /* wenn eine Zeichenkette leer ist, gib 0 zurï¿½ck */
   if (str_len_1==0 || str_len_2==0)
     return 0;
 
   int max_len=str_len_1>str_len_2 ? str_len_1 : str_len_2;
 
   /* Suchradius. radius==0 bedeutet, dass nur die gleiche Position betrachtet
-   * wird, radius==k, dass Poitionen bis einschließlich Entfernung k betrachtet 
+   * wird, radius==k, dass Poitionen bis einschlieï¿½lich Entfernung k betrachtet 
    * werden
    */   
   int radius;
-  // Wenn beide Zeichenketten Länge 1 haben, setze Radius auf 0 
+  // Wenn beide Zeichenketten Lï¿½nge 1 haben, setze Radius auf 0 
   if(max_len==1)
     radius=0;
   else
@@ -219,19 +231,19 @@ if (!use_transpos_radius)
 /*
  * Eingabe:
  *  str_1, str_2  : Zeichenketten
- *  radius        : Radius, bis einschließlich dem gesucht wird
+ *  radius        : Radius, bis einschlieï¿½lich dem gesucht wird
  *    
  * Ausgabe:
  *  common        : gemeinsame Zeichen
  *   
- * Rückgabewert:  : Anzahl der Gemeinsamen Zeichen 
+ * Rï¿½ckgabewert:  : Anzahl der Gemeinsamen Zeichen 
  * 
- * unter common muss Speicher von mindestes length(str_1) Größe zugewiesen sein
+ * unter common muss Speicher von mindestes length(str_1) Grï¿½ï¿½e zugewiesen sein
  */      
 int getCommonCharacters(char * common, const char * str_1, 
                         const char * str_2, int radius)
 {
-  /* Im zweiten String werden Zeichen als gelöscht markiert,
+  /* Im zweiten String werden Zeichen als gelï¿½scht markiert,
    * kopiere deshalb um
    */   
   int str_len_1=strlen(str_1);
@@ -241,7 +253,7 @@ int getCommonCharacters(char * common, const char * str_1,
   char * str_2_temp=(char *)R_alloc(1,str_len_2+1);
   strcpy(str_2_temp, str_2);
   
-  // Zählvariablen
+  // Zï¿½hlvariablen
   int cur_pos; /* Zeichenposition in str_1 */
   int search_pos; /* Suchposition in str_1 */
 

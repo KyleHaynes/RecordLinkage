@@ -1,7 +1,7 @@
 # strcmp.r: functions for string comparison
 
 
-jarowinkler <- function(str1, str2, W_1=1/3, W_2=1/3, W_3=1/3, r=0.5)
+jarowinkler <- function(str1, str2, W_1=1/3, W_2=1/3, W_3=1/3, r=0.5, gid, uid)
 {
   # check type
   if (typeof(str1) != "character" && class(str1) != "factor")
@@ -18,7 +18,7 @@ jarowinkler <- function(str1, str2, W_1=1/3, W_2=1/3, W_3=1/3, r=0.5)
       stop ("non-conformable arrays")
    if(length(str1)==0 || length(str2)==0) return(double(0))
     ans <- .Call(".jarowinklerCALL", str1, str2, #l1,l2,
-             as.double(W_1), as.double(W_2), as.double(W_3), as.double(r),
+             as.double(W_1), as.double(W_2), as.double(W_3), as.double(r), gid, uid,
              PACKAGE="RecordLinkage")
 
    if (any(is.na(str1),is.na(str2)))
